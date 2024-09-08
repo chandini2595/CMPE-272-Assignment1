@@ -1,0 +1,35 @@
+---
+- name: Un-deploy webservers
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Stop and disable Apache service
+      service:
+        name: httpd
+        state: stopped
+        enabled: no
+
+    - name: Remove Apache package
+      package:
+        name: httpd
+        state: absent
+
+    - name: Remove custom web page
+      file:
+        path: /var/www/html/index.html
+        state: absent
+
+    - name: Remove port 8080 from firewalld
+      firewalld:
+        port: 8080/tcp
+        state: disabled
+        permanent: yes
+
+    - name: Reload firewalld to apply changes
+      command: firewall-cmd --reload
+
+    - name: Stop and disable firewalld
+      service:
+        name: firewalld
+        state: stopped
+        enabled: no

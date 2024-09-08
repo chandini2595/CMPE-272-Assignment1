@@ -1,0 +1,51 @@
+---
+- name: Deploy webservers
+  hosts: webservers
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3  # Ensure the correct Python interpreter is used
+  tasks:
+    - name: Ensure firewalld is installed
+      package:
+        name: firewalld
+        state: present
+
+    - name: Start and enable firewalld
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+
+    - name: Ensure Apache is installed
+      package:
+        name: httpd
+        state: present
+
+    - name: Configure Apache to listen on port 8080
+      lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^Listen '
+        line: 'Listen 8080'
+        state: present
+
+    - name: Start and enable Apache service
+      service:
+        name: httpd
+        state: restarted
+        enabled: yes
+
+    - name: Create custom web page
+      copy:
+        dest: /var/www/html/index.html
+        content: |
+          Hello World from SJSU-{{ server_id }}
+
+    - name: Open port 8080 in firewalld
+      firewalld:
+        port: 8080/tcp
+        permanent: yes
+        state: enabled
+        immediate: yes
+
+    - name: Reload firewalld to apply changes
+      command: firewall-cmd --reload
